@@ -2167,7 +2167,7 @@ COMMIT
 
 func TestOnlyLocalLoadBalancingJumpIfLocalLoadbalancerVIPToCulsterIP(t *testing.T) {
 	ipt := iptablestest.NewFake()
-	fp := NewFakeProxier(ipt, false)
+	fp := NewFakeProxier(ipt)
 	fp.localDetector, _ = proxyutiliptables.NewDetectLocalByInterface("eth")
 	svcIP := "10.20.30.41"
 	svcPort := 80
