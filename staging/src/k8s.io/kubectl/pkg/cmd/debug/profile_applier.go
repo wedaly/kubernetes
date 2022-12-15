@@ -34,6 +34,8 @@ const (
 	// ProfileRestricted is identical to "baseline" but adds configuration that's required
 	// under the restricted security profile, such as requiring a non-root user and dropping all capabilities.
 	ProfileRestricted = "restricted"
+	// ProfileNetAdmin offers elevated privileges for network debugging.
+	ProfileNetAdmin = "netadmin"
 )
 
 type ProfileApplier interface {
@@ -52,6 +54,8 @@ func NewProfileApplier(profile string) (ProfileApplier, error) {
 		return &baselineProfile{}, nil
 	case ProfileRestricted:
 		return &restrictedProfile{}, nil
+	case ProfileNetAdmin:
+		return &netadminProfile{}, nil
 	}
 
 	return nil, fmt.Errorf("unknown profile: %s", profile)

@@ -37,6 +37,9 @@ type baselineProfile struct {
 type restrictedProfile struct {
 }
 
+type netadminProfile struct {
+}
+
 func (p *legacyProfile) Apply(pod *corev1.Pod, containerName string, target runtime.Object) error {
 	switch target.(type) {
 	case *corev1.Pod:
@@ -205,6 +208,33 @@ func (p *restrictedProfile) Apply(pod *corev1.Pod, containerName string, target 
 	pod.Spec.SecurityContext = nil
 	setHostNamespace(pod, false)
 
+	return nil
+}
+
+func (p *netadminProfile) Apply(pod *corev1.Pod, containerName string, target runtime.Object) error {
+	// Add NET_ADMIN capability for node, pod copy, and ephemeral container.
+	// For node, also set privileged and use host namespaces.
+	switch getDebugStyle(pod, target) {
+	case stylePodCopy:
+		modifyContainer(pod.Spec.Containers, containerName, func(c *corev1.Container) {
+			c.SecurityContext = addCap(c.SecurityContext, "NET_ADMIN")
+		})
+
+	case styleEphemeral:
+		modifyEphemeralContainer(pod.Spec.EphemeralContainers, containerName, func(c *corev1.EphemeralContainer) {
+			c.SecurityContext = addCap(c.SecurityContext, "NET_ADMIN")
+		})
+
+	case styleNode:
+		modifyContainer(pod.Spec.Containers, containerName, func(c *corev1.Container) {
+			c.SecurityContext = addCap(c.SecurityContext, "NET_ADMIN")
+			c.SecurityContext.Privileged = pointer.BoolPtr(true)
+		})
+		setHostNamespace(pod, true)
+
+	default:
+		return fmt.Errorf("the %s profile doesn't support objects of type %T", ProfileNetAdmin, target)
+	}
 	return nil
 }
 
